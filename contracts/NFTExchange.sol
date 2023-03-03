@@ -39,7 +39,7 @@ contract NFTExchange is Ownable, ReentrancyGuard {
     feeAddress = feeAddress_;
   }
 
-  function atomicMatch(Order memory buy, Sig memory buySig, Order memory sell, Sig memory sellSig) external nonReentrant {
+  function atomicMatch(Order memory buy, Sig memory buySig, Order memory sell, Sig memory sellSig) external payable nonReentrant {
     bytes32 buyHash = validateOrder(buy, buySig);
     bytes32 sellHash = validateOrder(sell, sellSig);
 
