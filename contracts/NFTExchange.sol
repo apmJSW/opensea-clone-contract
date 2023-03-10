@@ -16,8 +16,16 @@ struct Sig {
 }
 
 contract NFTExchange is Ownable, ReentrancyGuard {
-  bytes32 private constant ORDER_TYPEHASH = 0x7d2606b3242cc6e6d31de9a58f343eed0d0647bd06fe84c19441d47d44316877;
 
+  bytes32 private constant ORDER_TYPEHASH = 0x7d2606b3242cc6e6d31de9a58f343eed0d0647bd06fe84c19441d47d44316877;
+  bytes32 private DOMAIN_SEPERATOR = keccak256(
+        abi.encode(
+          keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"), 
+          keccak256("Wyvern Clone Coding Exchange"), keccak256("1"), 
+          5, 
+          address(this)
+        )
+      );
   address public feeAddress;
   mapping (bytes32 => bool) public cancelledOrFinalized;
   IProxyRegistry proxyRegistry;
@@ -188,8 +196,9 @@ contract NFTExchange is Ownable, ReentrancyGuard {
     }
   }
 
-  function validateOrderSig(Order memory order, Sig memory sig) internal pure returns (bytes32 orderHash) {
-    orderHash = hashOrder(order);
+  function validateOrderSig(Order memory order, Sig memory sig) internal view returns (bytes32 orderHash) {
+    bytes32 sigMessage;
+    (orderHash, sigMessage) = orderSigMessage(order);
 
     require(ecrecover(orderHash, sig.v, sig.r, sig.s) == order.maker);
   }
@@ -266,5 +275,12 @@ contract NFTExchange is Ownable, ReentrancyGuard {
         0
       )
     }
+  }
+
+  function orderSigMessage(Order memory order) internal view returns (bytes32 orderHash, bytes32 sigMessage) {
+    orderHash = hashOrder(order);
+    sigMessage = keccak256(
+      abi.encodePacked("\x19\x01", DOMAIN_SEPERATOR, orderHash)
+    );
   }
 }
